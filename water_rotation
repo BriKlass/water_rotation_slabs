@@ -1,0 +1,39 @@
+from ase.io import read, write
+from ase.geometry import analysis
+import numpy as np
+
+# User input
+poscar_in = "415_1water.vasp"              # input POSCAR.vasp (slab + H2O)
+poscar_out = "415_1water_struct2.vasp"     # output POSCAR.vasp for VESTA
+angle_deg = 140           # rotation angle in degrees
+axis = "z"                # rotation axis: 'x', 'y', or 'z'
+
+# User: include the O,H,H indices (0-based)
+water_indices = [20, 21, 22]  
+
+# Load structure
+atoms = read(poscar_in, format="vasp")
+
+# Get center of mass of the water molecule
+water = atoms[water_indices]
+com = water.get_center_of_mass()
+
+# Rotate only the water atoms
+# Extract water atoms
+water = atoms[water_indices].copy()
+
+# Translate water atoms so COM is at origin
+water.positions -= com
+
+# Rotate water molecule
+water.rotate(angle_deg, axis, center=(0.0, 0.0, 0.0))
+
+# Translate water atoms back to original COM
+water.positions += com
+
+# Insert rotated water back into main structure
+atoms.positions[water_indices] = water.positions
+
+# Write rotated structure as POSCAR
+write(poscar_out, atoms, format="vasp", direct=True)
+print(f"Rotated structure written to {poscar_out}")
